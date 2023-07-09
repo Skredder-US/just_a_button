@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'dart:io';
 
 void main() {
   runApp(const JustAButton());
@@ -30,8 +31,32 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final player = AudioPlayer();
-  var isPlaying = false;
+  // All supported flutter and text-to-speech languages from code to name
+  // Will add 5 at a time (here and there)
+  // Is a slower LinkedHashMap but this supports better syntax
+  static const Map<String, String> languageCodeToName = {
+    'af': 'Afrikaans',
+    'am': 'Amharic',
+    'ar': 'Arabic',
+    'bn': 'Bangla', // Bengali
+    'bg': 'Bulgarian',
+  };
+
+  final AudioPlayer player = AudioPlayer();
+  var isPlaying = false; // doesn't start 'til pressed
+  final deviceLanguage = Platform.localeName.split('_')[0];
+
+  _MyHomePageState() {
+    // debug print language code
+    print(deviceLanguage);
+
+    player.onPlayerComplete.listen((event) {
+      isPlaying = false; // works
+    });
+  }
+
+  // TODO: first sound using Platform language
+  // TODO: following sounds using location
 
   @override
   Widget build(BuildContext context) {
