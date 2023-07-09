@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const JustAButton());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class JustAButton extends StatelessWidget {
+  const JustAButton({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Just a Button',
       theme: ThemeData(
+        // Temp default color
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
@@ -30,15 +31,23 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final player = AudioPlayer();
+  var isPlaying = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
+          // Temp? simple button
           child: ElevatedButton(
-        child: const Text('Press'),
+        child: const Text(''),
         onPressed: () async {
-          await player.play(AssetSource('example.mp3'));
+          if (isPlaying) {
+            player.stop();
+          } else {
+            // Temp example sound
+            await player.play(AssetSource('example.mp3'));
+          }
+          isPlaying = !isPlaying;
         },
       )),
     );
