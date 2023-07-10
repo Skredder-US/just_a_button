@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:io';
 import 'package:geolocator/geolocator.dart';
+import 'package:collection/collection.dart';
 
 void main() {
   runApp(const JustAButton());
@@ -126,20 +127,16 @@ class _MyHomePageState extends State<MyHomePage> {
   final localeName = Platform.localeName;
 
   _MyHomePageState() {
-    // debug print language code
-    print(localeName);
-
     player.onPlayerComplete.listen((event) {
       // doesn't trigger on .stop();
       isPlaying = false; // works
     });
 
-    // debug print location
-    _determinePosition().then((position) => print(position));
+    _determineLocation().then((location) => getAudioFilesInOrder(location));
   }
 
   // Sample code found at 'https://pub.dev/packages/geolocator'
-  Future<Position> _determinePosition() async {
+  Future<Position> _determineLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -177,15 +174,30 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // TODO: work in progress!
-  List<String> getAudioFilesInOrder(var locationCoord) {
-    // first audio is system language
-    var languageCode;
-    if (localeName == 'fr_CA' || localeName == 'pt_BR') {
-      // special case for 'French (Canada)' and 'Portuguese (Brazil)'
-      languageCode = localeName;
-    } else {
-      languageCode = localeName.split('_')[0]; // in the form e.g.: 'en_US'
+  List<String> getAudioFilesInOrder(Position location) {
+    var nearestLanguages = PriorityQueue<DistanceToLanguages>();
+
+    for (var curCoord in coordinateToLanguages.keys) {
+      var distance = Geolocator.distanceBetween(location.latitude,
+          location.longitude, curCoord.latitude, curCoord.longitude);
+      // TODO: Null safe syntax is unavoidable?
+      List<String>? languages = coordinateToLanguages[curCoord];
+      nearestLanguages.add(DistanceToLanguages(distance, languages));
     }
+
+    // debug print
+    while (nearestLanguages.isNotEmpty) {
+      print(nearestLanguages.removeFirst().languages);
+    }
+
+    // // first audio is system language
+    // var languageCode;
+    // if (localeName == 'fr_CA' || localeName == 'pt_BR') {
+    //   // special case for 'French (Canada)' and 'Portuguese (Brazil)'
+    //   languageCode = localeName;
+    // } else {
+    //   languageCode = localeName.split('_')[0]; // in the form e.g.: 'en_US'
+    // }
 
     return [];
   }
@@ -216,4 +228,16 @@ class Coordinate {
   final double longitude; // Longitude, in degress
 
   const Coordinate(this.latitude, this.longitude);
+}
+
+class DistanceToLanguages implements Comparable<DistanceToLanguages> {
+  final double distance;
+  final List<String>? languages;
+
+  const DistanceToLanguages(this.distance, this.languages);
+
+  @override
+  int compareTo(DistanceToLanguages other) {
+    return distance.compareTo(other.distance);
+  }
 }
