@@ -34,7 +34,7 @@ class MyHomePage extends StatefulWidget {
 
 // TODO: general null safety
 class _MyHomePageState extends State<MyHomePage> {
-  // All Microsoft Translater text-to-speech languages from code to name.
+  // All(?) Bing Translater text-to-speech languages from code to name.
   // Codes are from Flutter's Platform widget in 'ISO 639-1' format.
   // Is a slower LinkedHashMap but this supports const.
   // Doubled checked for accuracy!
@@ -117,6 +117,24 @@ class _MyHomePageState extends State<MyHomePage> {
     Coordinate(26.216667, 50.583333): ['arabic'], // Bahrain
     Coordinate(-11.683333, 43.266667): ['arabic', 'french'], // Comoros
     Coordinate(12.1, 16.033333): ['arabic', 'french'], // Chad
+    Coordinate(11.6, 43.166667): ['arabic', 'french'], // Djibouti
+    Coordinate(30.033333, 31.216667): ['arabic'], // Egypt
+    Coordinate(15.337760, 38.931352): ['arabic', 'english'], // Eritrea
+    Coordinate(33.333333, 44.433333): ['arabic'], // Iraq
+    Coordinate(31.95, 35.933333): ['arabic'], // Jordan
+    Coordinate(29.366667, 47.966667): ['arabic'], // Kuwait
+    Coordinate(33.9, 35.533333): ['arabic'], // Lebanon
+    Coordinate(32.896589, 13.179370): ['arabic'], // Libya
+    Coordinate(18.15, -15.966667): ['arabic'], // Mauritania
+    Coordinate(34.033333, -6.85): ['arabic'], // Morocco
+    Coordinate(23.6, 58.55): ['arabic'], // Oman
+    Coordinate(31.902940, 35.206210): ['arabic'], // Palestine
+    Coordinate(25.3, 51.516667): ['arabic', 'english'], // Qatar
+    Coordinate(24.694701, 46.723209): ['arabic'], // Saudi Arabia
+    Coordinate(15.633333, 32.533333): ['arabic', 'english'], // Sudan
+    Coordinate(33.5, 36.3): ['arabic'], // Syria
+    Coordinate(36.816667, 10.183333): ['arabic'], // Tunisia
+    Coordinate(15.353559, 44.205941): ['arabic'], // Yemen
   };
 
   final AudioPlayer player = AudioPlayer();
@@ -185,16 +203,14 @@ class _MyHomePageState extends State<MyHomePage> {
     return await Geolocator.getCurrentPosition();
   }
 
-  List<String?> _getLanguagesInOrder(Position location) {
+  List<String> _getLanguagesInOrder(Position location) {
     // add the distance to each capital and the languages spoken there
     var nearestLanguages = PriorityQueue<DistanceToLanguages>();
-    for (var curCoord in coordinateToLanguages.keys) {
+    coordinateToLanguages.forEach((curCoord, languages) {
       var distance = Geolocator.distanceBetween(location.latitude,
           location.longitude, curCoord.latitude, curCoord.longitude);
-      // TODO: Null safe syntax is unavoidable?
-      List<String>? languages = coordinateToLanguages[curCoord];
       nearestLanguages.add(DistanceToLanguages(distance, languages));
-    }
+    });
 
     // debug print. works so far!
     // while (nearestLanguages.isNotEmpty) {
@@ -202,28 +218,30 @@ class _MyHomePageState extends State<MyHomePage> {
     // }
 
     // In order list of languages to play
-    List<String?> inOrderLanguages = [];
+    List<String> inOrderLanguages = [];
 
     // first language is system language
     String languageCode;
     if (localeName == 'fr_CA' || localeName == 'pt_BR') {
-      // special case for 'french_canada' and 'portuguese_Brazil'
+      // special case for 'french_canada' and 'portuguese_brazil'
       languageCode = localeName;
     } else {
       languageCode = localeName.split('_')[0]; // in the form e.g.: 'en_US'
     }
-    // TODO language not supported
-    inOrderLanguages.add(languageCodeToName[languageCode]);
+
+    // unsupported language names ignored and nearest language used first
+    var languageName = languageCodeToName[languageCode];
+    if (languageName != null) {
+      inOrderLanguages.add(languageName);
+    }
 
     // Add nearest languages first (no duplicates) and stay in order
     while (nearestLanguages.isNotEmpty) {
       var curLanguages = nearestLanguages.removeFirst().languages;
-      if (curLanguages != null) {
-        // TODO: really neccesary to check for null?
-        for (var language in curLanguages) {
-          if (!inOrderLanguages.contains(language)) {
-            inOrderLanguages.add(language);
-          }
+
+      for (var language in curLanguages) {
+        if (!inOrderLanguages.contains(language)) {
+          inOrderLanguages.add(language);
         }
       }
     }
@@ -266,7 +284,7 @@ class Coordinate {
 
 class DistanceToLanguages implements Comparable<DistanceToLanguages> {
   final double distance;
-  final List<String>? languages;
+  final List<String> languages;
 
   const DistanceToLanguages(this.distance, this.languages);
 
