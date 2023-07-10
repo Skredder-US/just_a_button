@@ -32,15 +32,10 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-// TODO: first sound using device language
-// TODO: following sounds using location
 // TODO: general null safety
-// Plan: get location; forEach coordinate add pair to priorityQueue;
-// play the first pair's audiofile then the next until empty
 class _MyHomePageState extends State<MyHomePage> {
   // All Microsoft Translater text-to-speech languages from code to name.
   // Codes are from Flutter's Platform widget in 'ISO 639-1' format.
-  // Languages are as seen in Microsoft Translater.
   // Is a slower LinkedHashMap but this supports const.
   // Doubled checked for accuracy!
   static const Map<String, String> languageCodeToName = {
@@ -98,7 +93,6 @@ class _MyHomePageState extends State<MyHomePage> {
     'ru': 'russian',
     'sk': 'slovak',
     'sl': 'slovenian',
-    'so': 'somali',
     'es': 'spanish',
     'sw': 'swahili',
     'sv': 'swedish',
@@ -111,35 +105,45 @@ class _MyHomePageState extends State<MyHomePage> {
     'uz': 'uzbek',
     'vi': 'vietnamese',
     'cy': 'welsh',
-    'zu': 'zulu',
   };
 
-  // TODO: populate this after languageCodeToName
+  // TODO: populate this while adding matching audio files
   // Stores GPS coordinates of capital of country using the list of official
   // languages (supported languages only)
   static const Map<Coordinate, List<String>> coordinateToLanguages = {
-    Coordinate(-25.746111, 28.188056): [
-      'zulu',
-      'afrikaans',
-      'english',
-    ], // South Africa
-    Coordinate(9.016667, 38.75): ['amharic', 'somali'], // Ethiopia
+    Coordinate(-25.746111, 28.188056): ['afrikaans', 'english'], // South Africa
+    Coordinate(9.016667, 38.75): ['amharic'], // Ethiopia
     Coordinate(36.7, 3.216667): ['arabic'], // Algeria
     Coordinate(26.216667, 50.583333): ['arabic'], // Bahrain
     Coordinate(-11.683333, 43.266667): ['arabic', 'french'], // Comoros
+    Coordinate(12.1, 16.033333): ['arabic', 'french'], // Chad
   };
 
   final AudioPlayer player = AudioPlayer();
-  var isPlaying = false; // doesn't start 'til pressed
   final localeName = Platform.localeName;
+  var inOrderLanguages = [];
+  var languagesIndex = 0;
+  var isPlaying = false; // doesn't start 'til pressed
 
   _MyHomePageState() {
     player.onPlayerComplete.listen((event) {
-      // doesn't trigger on .stop();
-      isPlaying = false; // works
+      _playNextAudio(); // until last audio
     });
 
-    _determineLocation().then((location) => getAudioFilesInOrder(location));
+    _determineLocation().then((location) {
+      inOrderLanguages = _getLanguagesInOrder(location);
+    });
+  }
+
+  void _playNextAudio() async {
+    if (languagesIndex < inOrderLanguages.length) {
+      print(inOrderLanguages[languagesIndex]); // debug
+      await player.play(AssetSource('${inOrderLanguages[languagesIndex]}.mp3'));
+      languagesIndex++;
+    } else {
+      isPlaying = false; // works
+      languagesIndex = 0; // just in case
+    }
   }
 
   // Sample code found at 'https://pub.dev/packages/geolocator''
@@ -181,8 +185,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return await Geolocator.getCurrentPosition();
   }
 
-  // TODO: work in progress!
-  List<String?> getAudioFilesInOrder(Position location) {
+  List<String?> _getLanguagesInOrder(Position location) {
     // add the distance to each capital and the languages spoken there
     var nearestLanguages = PriorityQueue<DistanceToLanguages>();
     for (var curCoord in coordinateToLanguages.keys) {
@@ -193,7 +196,7 @@ class _MyHomePageState extends State<MyHomePage> {
       nearestLanguages.add(DistanceToLanguages(distance, languages));
     }
 
-    // debug print. works!
+    // debug print. works so far!
     // while (nearestLanguages.isNotEmpty) {
     //   print(nearestLanguages.removeFirst().languages);
     // }
@@ -204,14 +207,15 @@ class _MyHomePageState extends State<MyHomePage> {
     // first language is system language
     String languageCode;
     if (localeName == 'fr_CA' || localeName == 'pt_BR') {
-      // special case for 'French (Canada)' and 'Portuguese (Brazil)'
+      // special case for 'french_canada' and 'portuguese_Brazil'
       languageCode = localeName;
     } else {
       languageCode = localeName.split('_')[0]; // in the form e.g.: 'en_US'
     }
+    // TODO language not supported
     inOrderLanguages.add(languageCodeToName[languageCode]);
 
-    // Add closest languages first
+    // Add nearest languages first (no duplicates) and stay in order
     while (nearestLanguages.isNotEmpty) {
       var curLanguages = nearestLanguages.removeFirst().languages;
       if (curLanguages != null) {
@@ -224,7 +228,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    // debug check language order. works!
+    // debug check language order. works so far!
     for (var element in inOrderLanguages) {
       print(element);
     }
@@ -243,8 +247,8 @@ class _MyHomePageState extends State<MyHomePage> {
           if (isPlaying) {
             player.stop();
           } else {
-            // Temp example sound
-            await player.play(AssetSource('example.mp3'));
+            languagesIndex = 0;
+            _playNextAudio();
           }
           isPlaying = !isPlaying;
         },

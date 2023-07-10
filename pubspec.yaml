@@ -34,6 +34,7 @@ dependencies:
   # My code
   audioplayers: ^4.1.0
   geolocator: ^9.0.2
+  collection: ^1.17.2
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -95,4 +96,8 @@ flutter:
 
   # My code
   assets:
-    - assets/example.mp3
+    - assets/english.mp3
+    - assets/arabic.mp3
+    - assets/amharic.mp3
+    - assets/french.mp3
+    - assets/afrikaans.mp3
