@@ -96,8 +96,21 @@ flutter:
 
   # My code
   assets:
-    - assets/english.mp3
-    - assets/arabic.mp3
-    - assets/amharic.mp3
-    - assets/french.mp3
     - assets/afrikaans.mp3
+    - assets/amharic.mp3
+    - assets/arabic.mp3
+    - assets/bangla.mp3
+    - assets/bulgarian.mp3
+    - assets/catalan.mp3
+    - assets/chinese.mp3
+    - assets/croatian.mp3
+    - assets/czech.mp3
+    - assets/danish.mp3
+    - assets/dutch.mp3
+    - assets/english.mp3
+    - assets/french.mp3
+    - assets/german.mp3
+    - assets/hindi.mp3
+    - assets/irish.mp3
+    - assets/malay.mp3
+    - assets/maltese.mp3
