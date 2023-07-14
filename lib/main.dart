@@ -18,8 +18,10 @@ class JustAButton extends StatelessWidget {
     return MaterialApp(
       title: 'Just a Button',
       theme: ThemeData(
-        // Temp default color
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        // Average color of the universe as perceived from Earth
+        // A.K.A. Cosmic latte
+        // src: https://en.wikipedia.org/wiki/Cosmic_latte
+        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 248, 231),
         useMaterial3: true,
       ),
       home: const MyHomePage(),
@@ -79,7 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
     'ml': 'malayalam',
     'mt': 'maltese',
     'mr': 'marathi',
-    'my': 'myanmar',
+    'my': 'myanmar', // Burmese
     'nb': 'norwegian', // from Bokmal
     'nn': 'norwegian', // from Nynorsk
     'ps': 'pashto',
@@ -240,9 +242,18 @@ class _MyHomePageState extends State<MyHomePage> {
     Coordinate(17.966667, 102.6): ['lao'], // Laos
     Coordinate(56.95, 24.1): ['latvian'], // Latvia
     Coordinate(54.683333, 25.316667): ['lithuanian'], // Lithuanian
+    Coordinate(42, 21.433333): ['macedonian'], // North Macedonia
+    Coordinate(4.890283, 114.942217): ['malay'], // Brunei
+    Coordinate(3.133333, 101.683333): ['malay'], // Malaysia
+    Coordinate(10, 76.3): ['malayalam'], // Kerala (India)
+    Coordinate(18.97, 72.82): ['marathi'], // Maharashtra (India)
+    Coordinate(19.75, 96.1): ['myanmar'], // Myanmar
+    Coordinate(59.933333, 10.683333): ['norwegian'], // Norway
+    Coordinate(34.516667, 69.183333): ['pashto'], // Afghanistan
+    Coordinate(35.683333, 51.416667): ['persian'], // Iran
   };
 
-  final AudioPlayer player = AudioPlayer();
+  final player = AudioPlayer();
   final localeName = Platform.localeName;
   var languagesInOrder = [];
   var languageIndex = 0;
@@ -353,16 +364,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _playNextAudio() async {
     if (languageIndex < languagesInOrder.length) {
+      print(languagesInOrder[languageIndex]); // debug
+
       if (languageIndex > 0) {
         await Future.delayed(const Duration(milliseconds: 500));
       }
 
-      print(languagesInOrder[languageIndex]); // debug
-      await player.play(AssetSource('${languagesInOrder[languageIndex]}.mp3'));
-      languageIndex++;
+      // Handle when the user pressed the button during the delay
+      if (isPlaying) {
+        await player
+            .play(AssetSource('${languagesInOrder[languageIndex]}.mp3'));
+
+        // Handle when the user pressed the button while loading the asset
+        if (isPlaying) {
+          languageIndex++;
+        } else {
+          player.stop();
+        }
+      }
     } else {
-      isPlaying = false; // works
-      languageIndex = 0;
+      isPlaying = false;
     }
   }
 
@@ -370,20 +391,38 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-          // Temp? simple button
           child: ElevatedButton(
-        child: const Text(''),
-        onPressed: () async {
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          // Average color of Earth (as seen from satellite)
+          // src: https://www.jeffreythompson.org/blog/2014/08/13/average-color-of-the-earth/
+          backgroundColor: const Color.fromARGB(255, 23, 57, 61),
+          fixedSize: _getButtonSize(),
+        ),
+        onPressed: () {
           if (isPlaying) {
+            isPlaying = false;
             player.stop();
           } else {
-            languageIndex = 0; // starts at beginning always
+            isPlaying = true;
+            languageIndex = 0; // start at the beginning
             _playNextAudio();
           }
-          isPlaying = !isPlaying;
         },
+        child: const Text(''), // no text, only button
       )),
     );
+  }
+
+  // Return a Size with same width and height equal to the min of the screen
+  // width and height divided by the golden ratio.
+  Size _getButtonSize() {
+    var screenHeight = MediaQuery.of(context).size.height;
+    var screenWidth = MediaQuery.of(context).size.width;
+
+    var diameter =
+        min(screenHeight, screenWidth) / 1.6180339887; // golden ratio
+    return Size(diameter, diameter);
   }
 }
 

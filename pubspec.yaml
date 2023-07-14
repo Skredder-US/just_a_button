@@ -129,8 +129,15 @@ flutter:
     - assets/lao.mp3
     - assets/latvian.mp3
     - assets/lithuanian.mp3
+    - assets/macedonian.mp3
     - assets/malay.mp3
+    - assets/malayalam.mp3
     - assets/maltese.mp3
+    - assets/marathi.mp3
+    - assets/myanmar.mp3
+    - assets/norwegian.mp3
+    - assets/pashto.mp3
+    - assets/persian.mp3
     - assets/portuguese.mp3
     - assets/russian.mp3
     - assets/spanish.mp3
