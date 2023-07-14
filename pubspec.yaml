@@ -114,12 +114,25 @@ flutter:
     - assets/german.mp3
     - assets/greek.mp3
     - assets/gujarati.mp3
+    - assets/hebrew.mp3
     - assets/hindi.mp3
+    - assets/hungarian.mp3
+    - assets/icelandic.mp3
+    - assets/indonesian.mp3
     - assets/irish.mp3
     - assets/italian.mp3
+    - assets/japanese.mp3
+    - assets/kannada.mp3
+    - assets/kazakh.mp3
+    - assets/khmer.mp3
+    - assets/korean.mp3
+    - assets/lao.mp3
+    - assets/latvian.mp3
+    - assets/lithuanian.mp3
     - assets/malay.mp3
     - assets/maltese.mp3
     - assets/portuguese.mp3
+    - assets/russian.mp3
     - assets/spanish.mp3
     - assets/swedish.mp3
     - assets/turkish.mp3

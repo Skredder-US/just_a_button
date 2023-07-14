@@ -47,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
     'bg': 'bulgarian',
     // Cantonese (Traditional) missing from codes
     'ca': 'catalan',
-    'zh': 'chinese', // Simplified and Traditional are same for this
+    'zh': 'chinese',
     'hr': 'croatian',
     'cs': 'czech',
     'da': 'danish',
@@ -55,7 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
     'en': 'english',
     'et': 'estonian',
     'fi': 'finnish',
-    'fr': 'french',
+    'fr': 'french', // french and french canadian are same for this
     'de': 'german',
     'el': 'greek',
     'gu': 'gujarati',
@@ -224,6 +224,22 @@ class _MyHomePageState extends State<MyHomePage> {
     Coordinate(37.966667, 23.716667): ['greek'], // Greece
     Coordinate(35.166667, 33.366667): ['greek', 'turkish'], // Cyprus
     Coordinate(23.22, 72.655): ['gujarati', 'hindi'], // Gujrat (India)
+    Coordinate(31.783333, 35.216667): ['hebrew'], // Israel
+    Coordinate(47.433333, 19.25): ['hungarian'], // Hungary
+    Coordinate(64.133333, -21.933333): ['icelandic'], // Iceland
+    Coordinate(-6.166667, 106.816667): ['indonesian'], // Indonesia
+    Coordinate(43.933333, 12.433333): ['italian'], // San Marino
+    Coordinate(41.9025, 12.4525): ['italian'], // Vatican City
+    Coordinate(35.683333, 139.766667): ['japanese'], // Japan
+    Coordinate(12.978889, 77.591667): ['kannada'], // Karnataka (India)
+    Coordinate(51.166667, 71.433333): ['kazakh', 'russian'], // Kazakhstan
+    Coordinate(51.95, 85.966667): ['russian', 'kazakh'], // Altai Republic (RU)
+    Coordinate(11.57, 104.91): ['khmer'], // Cambodia
+    Coordinate(37.55, 126.966667): ['korean'], // South Korean
+    Coordinate(39.033333, 125.75): ['korean'], // North Korean
+    Coordinate(17.966667, 102.6): ['lao'], // Laos
+    Coordinate(56.95, 24.1): ['latvian'], // Latvia
+    Coordinate(54.683333, 25.316667): ['lithuanian'], // Lithuanian
   };
 
   final AudioPlayer player = AudioPlayer();
@@ -290,7 +306,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _prepareLanguagesInOrder(Coordinate location) {
-    print(location.latitude); // debug
+    // debug
+    print(location.latitude);
     print(location.longitude);
 
     // add the distance to each capital and the languages spoken there
@@ -320,11 +337,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Add nearest languages first (no duplicates)
     while (nearestLanguages.isNotEmpty) {
-      var curLanguages = nearestLanguages.removeFirst().languages;
+      // debug
+      var distToLangs = nearestLanguages.removeFirst();
+      var curLanguages = distToLangs.languages;
+      // var curLanguages = nearestLanguages.removeFirst().languages;
 
       for (var language in curLanguages) {
         if (!languagesInOrder.contains(language)) {
           languagesInOrder.add(language);
+          print('${distToLangs.distance}: $language'); // debug
         }
       }
     }
@@ -332,6 +353,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _playNextAudio() async {
     if (languageIndex < languagesInOrder.length) {
+      if (languageIndex > 0) {
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
       print(languagesInOrder[languageIndex]); // debug
       await player.play(AssetSource('${languagesInOrder[languageIndex]}.mp3'));
       languageIndex++;
