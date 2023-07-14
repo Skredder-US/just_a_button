@@ -56,8 +56,6 @@ class _MyHomePageState extends State<MyHomePage> {
     'et': 'estonian',
     'fi': 'finnish',
     'fr': 'french',
-    'fr_CA': 'french_canada',
-    'gl': 'galician',
     'de': 'german',
     'el': 'greek',
     'gu': 'gujarati',
@@ -88,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
     'fa': 'persian',
     'pl': 'polish',
     'pt_BR': 'portuguese_brazil',
-    'pt': 'portuguese_portugal',
+    'pt': 'portuguese',
     'ro': 'romanian',
     'ru': 'russian',
     'sk': 'slovak',
@@ -182,28 +180,62 @@ class _MyHomePageState extends State<MyHomePage> {
     Coordinate(14.582260, 120.974800): ['english'], // Philippines
     Coordinate(-1.943889, 30.059444): ['french', 'english'], // Rwanda
     Coordinate(-13.833333, -171.762222): ['english'], // Samoa
+    Coordinate(8.5, -12.1): ['english'], // Sierra Leone
+    Coordinate(-9.431944, 159.955556): ['english'], // Solomon Islands
+    Coordinate(4.85, 31.6): ['english'], // South Sudan
+    Coordinate(-6.173056, 35.741944): ['english', 'arabic'], // Tanzania
+    Coordinate(10.666667, -61.5075): ['english'], // Trinidad and Tobago
+    Coordinate(0.313611, 32.581111): ['english'], // Uganda
+    Coordinate(-15.416667, 28.283333): ['english'], // Zambia
+    Coordinate(-17.829167, 31.052222): ['english'], // Zimbabwe
+    Coordinate(-35.308056, 149.124444): ['english'], // Australia
+    Coordinate(-41.3, 174.783333): ['english'], // New Zealand
+    Coordinate(51.5, -0.116667): ['english'], // United Kingdom
+    Coordinate(59.416667, 24.75): ['estonian'], // Estonia
+    Coordinate(60.170833, 24.9375): ['finnish', 'swedish'], // Finland
+    Coordinate(6.497222, 2.605): ['french'], // Benin
+    Coordinate(12.366667, -1.533333): ['french'], // Burkina Faso
+    Coordinate(4.366667, 18.583333): ['french'], // Central African Republic
+    Coordinate(-4.266667, 15.283333): ['french'], // Congo
+    Coordinate(-4.316667, 15.316667): ['french'], // Dem. Rep. of the Congo
+    Coordinate(3.75, 8.783333): [
+      'spanish',
+      'french',
+      'portuguese'
+    ], // Equatorial Guinea
+    Coordinate(48.85, 2.35): ['french'], // Franch
+    Coordinate(0.383333, 9.45): ['french'], // Gabon
+    Coordinate(9.516667, -13.7): ['french'], // Guinea
+    Coordinate(18.533333, -72.333333): ['french'], // Haiti
+    Coordinate(6.85, -5.3): ['french'], // Ivory Coast
+    Coordinate(49.814444, 6.131667): ['french', 'german'], // Luxembourg
+    Coordinate(-18.916667, 47.516667): ['french'], // Madagascar
+    Coordinate(12.65, -8): ['french'], // Mali
+    Coordinate(43.731111, 7.42): ['french'], // Monaco
+    Coordinate(13.533333, 2.083333): ['french'], // Niger
+    Coordinate(14.666667, -17.416667): ['french'], // Senegal
+    Coordinate(-4.616667, 55.45): ['english', 'french'], // Seychelles
+    Coordinate(46.95, 7.45): ['german', 'french', 'italian'], // Switzerland
+    Coordinate(6.133333, 1.216667): ['french'], // Togo
+    Coordinate(-17.733333, 168.316667): ['english', 'french'], // Vanuatu
+    Coordinate(48.2, 16.35): ['german'], // Austria
+    Coordinate(52.516667, 13.383333): ['german'], // Germany
+    Coordinate(47.166667, 9.509722): ['german'], // Liechtenstein
+    Coordinate(37.966667, 23.716667): ['greek'], // Greece
+    Coordinate(35.166667, 33.366667): ['greek', 'turkish'], // Cyprus
+    Coordinate(23.22, 72.655): ['gujarati', 'hindi'], // Gujrat (India)
   };
 
   final AudioPlayer player = AudioPlayer();
   final localeName = Platform.localeName;
-  var inOrderLanguages = [];
-  var languagesIndex = 0;
+  var languagesInOrder = [];
+  var languageIndex = 0;
   var isPlaying = false; // doesn't start 'til pressed
 
   _MyHomePageState() {
-    // Be ready to play the nearest languages in order on button press!
-    _getLocation().then((actualLocation) {
-      _getLanguagesInOrder(
-          Coordinate(actualLocation.latitude, actualLocation.longitude));
-    }).catchError((err) {
-      // Not allowed to use device location!
-      // Generate a random location
-      Random random = Random();
-      var randLatitude = random.nextDouble() * 180 - 90;
-      var randLongitude = random.nextDouble() * 180 - 90;
-
-      _getLanguagesInOrder(Coordinate(randLatitude, randLongitude));
-    });
+    // Use actual (when allowed) or random location to populate the list
+    // of languages, nearest to farthest.
+    _getLocation().then((location) => _prepareLanguagesInOrder(location));
 
     // When one language audio file completes, play the next (or end)
     player.onPlayerComplete.listen((event) {
@@ -211,21 +243,20 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  // Sample code found at 'https://pub.dev/packages/geolocator'
-  Future<Position> _getLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
+  // Request user for device location then return device location if allowed,
+  // otherwise return a random location.
+  // From sample code found at 'https://pub.dev/packages/geolocator'
+  Future<Coordinate> _getLocation() async {
     // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       // Location services are not enabled don't continue
       // accessing the position and request users of the
       // App to enable the location services.
-      return Future.error('Location services are disabled.');
+      return _getRandomCoordinate();
     }
 
-    permission = await Geolocator.checkPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
@@ -234,22 +265,31 @@ class _MyHomePageState extends State<MyHomePage> {
         // Android's shouldShowRequestPermissionRationale
         // returned true. According to Android guidelines
         // your App should show an explanatory UI now.
-        return Future.error('Location permissions are denied');
+        return _getRandomCoordinate();
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
       // Permissions are denied forever, handle appropriately.
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
+      return _getRandomCoordinate();
     }
 
     // When we reach here, permissions are granted and we can
     // continue accessing the position of the device.
-    return await Geolocator.getCurrentPosition();
+    var position = await Geolocator.getCurrentPosition();
+    return Coordinate(position.latitude, position.longitude);
   }
 
-  void _getLanguagesInOrder(Coordinate location) {
+  Coordinate _getRandomCoordinate() {
+    // Generate a random location
+    Random random = Random();
+    var randomLatitude = random.nextDouble() * 180 - 90;
+    var randomLongitude = random.nextDouble() * 180 - 90;
+
+    return Coordinate(randomLatitude, randomLongitude);
+  }
+
+  void _prepareLanguagesInOrder(Coordinate location) {
     print(location.latitude); // debug
     print(location.longitude);
 
@@ -265,8 +305,8 @@ class _MyHomePageState extends State<MyHomePage> {
     // --- add languages ---
     // first language is system language
     String languageCode;
-    if (localeName == 'fr_CA' || localeName == 'pt_BR') {
-      // special case for 'french_canada' and 'portuguese_brazil'
+    if (localeName == 'pt_BR') {
+      // special case for 'portuguese_brazil'
       languageCode = localeName;
     } else {
       languageCode = localeName.split('_')[0]; // in the form e.g.: 'en_US'
@@ -275,7 +315,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // unsupported language names ignored and nearest language used first
     var languageName = languageCodeToName[languageCode];
     if (languageName != null) {
-      inOrderLanguages.add(languageName);
+      languagesInOrder.add(languageName);
     }
 
     // Add nearest languages first (no duplicates)
@@ -283,21 +323,21 @@ class _MyHomePageState extends State<MyHomePage> {
       var curLanguages = nearestLanguages.removeFirst().languages;
 
       for (var language in curLanguages) {
-        if (!inOrderLanguages.contains(language)) {
-          inOrderLanguages.add(language);
+        if (!languagesInOrder.contains(language)) {
+          languagesInOrder.add(language);
         }
       }
     }
   }
 
   void _playNextAudio() async {
-    if (languagesIndex < inOrderLanguages.length) {
-      print(inOrderLanguages[languagesIndex]); // debug
-      await player.play(AssetSource('${inOrderLanguages[languagesIndex]}.mp3'));
-      languagesIndex++;
+    if (languageIndex < languagesInOrder.length) {
+      print(languagesInOrder[languageIndex]); // debug
+      await player.play(AssetSource('${languagesInOrder[languageIndex]}.mp3'));
+      languageIndex++;
     } else {
       isPlaying = false; // works
-      languagesIndex = 0; // just in case
+      languageIndex = 0;
     }
   }
 
@@ -312,7 +352,7 @@ class _MyHomePageState extends State<MyHomePage> {
           if (isPlaying) {
             player.stop();
           } else {
-            languagesIndex = 0;
+            languageIndex = 0; // starts at beginning always
             _playNextAudio();
           }
           isPlaying = !isPlaying;
@@ -322,9 +362,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+// Geographic coordinate for positions on Earth
 class Coordinate {
-  final double latitude; // Latitude, in degrees
-  final double longitude; // Longitude, in degress
+  // both in decimal degrees
+  final double latitude;
+  final double longitude;
 
   const Coordinate(this.latitude, this.longitude);
 }
