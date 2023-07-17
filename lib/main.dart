@@ -286,6 +286,25 @@ class _MyHomePageState extends State<MyHomePage> {
     Coordinate(46.051389, 14.506111): ['slovenian'], // Slovenia
     Coordinate(44.8, 20.466667): ['serbian'], // Serbia
     Coordinate(42.666667, 21.166667): ['serbian'], // Kosovo
+    Coordinate(-34.6, -58.383333): ['spanish'], // Argentina
+    Coordinate(-19.0475, -65.26): ['spanish'], // Bolivia
+    Coordinate(-33.433333, -70.666667): ['spanish'], // Chile
+    Coordinate(4.583333, -74.066667): ['spanish'], // Colombia
+    Coordinate(9.933333, -84.083333): ['spanish'], // Costa Rica
+    Coordinate(23.133333, -82.383333): ['spanish'], // Cuba
+    Coordinate(19, -70.666667): ['spanish'], // Dominican Republic
+    Coordinate(-0.22, -78.511944): ['spanish'], // Ecuador
+    Coordinate(13.698889, -89.191389): ['spanish'], // El Salvador
+    Coordinate(14.633333, -90.5): ['spanish'], // Guatemala
+    Coordinate(14.1, -87.216667): ['spanish'], // Honduras
+    Coordinate(19.433333, -99.133333): ['spanish'], // Mexico
+    Coordinate(12.1, -86.233333): ['spanish'], // Nicaragua
+    Coordinate(8.966667, -79.533333): ['spanish'], // Panama
+    Coordinate(-25.266667, -57.666667): ['spanish'], // Paraguay
+    Coordinate(-12.043333, -77.028333): ['spanish'], // Peru
+    Coordinate(40.433333, -3.7): ['spanish'], // Spain
+    Coordinate(-34.883333, -56.166667): ['spanish'], // Uruguay
+    Coordinate(10.5, -66.916667): ['spanish'], // Venezuela
   };
 
   final player = AudioPlayer();
@@ -427,33 +446,61 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-          child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          // Average color of Earth (as seen from a satellite)
-          // src: https://www.jeffreythompson.org/blog/2014/08/13/average-color-of-the-earth/
-          backgroundColor: const Color.fromARGB(255, 23, 57, 61),
-          fixedSize: _getButtonSize(),
-        ),
-        onPressed: () {
-          if (isPlaying) {
-            isPlaying = false;
-            player.stop();
-          } else {
-            isPlaying = true;
-            languageIndex = 0; // start at the beginning
-            _playNextAudio();
-          }
-        },
-        child: const Text(''), // no text, only button
-      )),
+      body: Stack(children: [
+        Center(
+            child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            // Average color of Earth (as seen from a satellite)
+            // src: https://www.jeffreythompson.org/blog/2014/08/13/average-color-of-the-earth/
+            backgroundColor: const Color.fromARGB(255, 23, 57, 61),
+            fixedSize: _calcButtonSize(),
+          ),
+          onPressed: () {
+            if (isPlaying) {
+              isPlaying = false;
+              player.stop();
+            } else {
+              isPlaying = true;
+              languageIndex = 0; // start at the beginning
+              _playNextAudio();
+            }
+          },
+          child: const Text(''), // no text, only button
+        )),
+        Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.all(_calcSubtitlePadding()),
+              child: Text(
+                'I hope you have a good day',
+                style: TextStyle(
+                  color: Colors.white,
+                  backgroundColor: const Color.fromARGB(255, 32, 32, 32),
+                  fontSize: _calcSubtitleFontSize(),
+                ),
+              ),
+            ))
+      ]),
     );
+  }
+
+  double _calcSubtitlePadding() {
+    var screenHeight = MediaQuery.of(context).size.height;
+
+    return screenHeight / 16.667;
+  }
+
+  double _calcSubtitleFontSize() {
+    var screenHeight = MediaQuery.of(context).size.height;
+    var screenWidth = MediaQuery.of(context).size.width;
+
+    return min(screenHeight, screenWidth) / 20;
   }
 
   // Return a Size with same width and height equal to the min of the screen
   // width and height divided by the golden ratio.
-  Size _getButtonSize() {
+  Size _calcButtonSize() {
     var screenHeight = MediaQuery.of(context).size.height;
     var screenWidth = MediaQuery.of(context).size.width;
 
