@@ -37,9 +37,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // All(?) Bing Translater text-to-speech languages from code to name.
+  // All(TODO: ?) Bing Translater text-to-speech languages from code to name.
   // Codes are from Flutter's Platform widget in 'ISO 639-1' format.
-  // Is a slower LinkedHashMap but this supports const.
+  // Used to find user's device language, a language they should understand.
+  // This language is played first so they know what's being said.
+  // Is a slower LinkedHashMap but this supports const which is faster.
   // Doubled checked for accuracy!
   static const Map<String, String> languageCodeToName = {
     'af': 'afrikaans',
@@ -87,12 +89,13 @@ class _MyHomePageState extends State<MyHomePage> {
     'ps': 'pashto',
     'fa': 'persian',
     'pl': 'polish',
-    'pt_BR': 'portuguese_brazil',
     'pt': 'portuguese',
+    'pt_BR': 'portuguese_brazil',
     'ro': 'romanian',
     'ru': 'russian',
     'sk': 'slovak',
     'sl': 'slovenian',
+    'sr': 'serbian',
     'es': 'spanish',
     'sw': 'swahili',
     'sv': 'swedish',
@@ -110,6 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
   // TODO: populate this while adding matching audio files
   // Stores GPS coordinates of capital of country using the list of official
   // languages (supported languages only)
+  // Infomation from Wikipedia.org
   static const Map<Coordinate, List<String>> coordinateToLanguages = {
     Coordinate(-25.746111, 28.188056): ['afrikaans', 'english'], // South Africa
     Coordinate(9.016667, 38.75): ['amharic'], // Ethiopia
@@ -137,6 +141,8 @@ class _MyHomePageState extends State<MyHomePage> {
     Coordinate(15.353559, 44.205941): ['arabic'], // Yemen
     Coordinate(23.763889, 90.388889): ['bangla'], // Bangladesh
     Coordinate(42.683333, 23.316667): ['bulgarian'], // Bulgaria
+    Coordinate(22.3, 114.2): ['cantonese', 'english'], // Hong Kong (China)
+    Coordinate(22.166667, 113.55): ['cantonese', 'portuguese'], // Macau (China)
     Coordinate(42.506389, 1.521389): ['catalan'], // Andorra
     Coordinate(39.916667, 116.383333): ['chinese'], // China
     Coordinate(25.066667, 121.516667): ['chinese'], // Taiwan
@@ -146,7 +152,10 @@ class _MyHomePageState extends State<MyHomePage> {
       'english'
     ], // Singapore
     Coordinate(45.8, 16): ['croatian'], // Croatia
-    Coordinate(43.866667, 18.416667): ['croatian'], // B&H
+    Coordinate(43.866667, 18.416667): [
+      'croatian',
+      'serbian'
+    ], // Bosnia and Herzegovina
     Coordinate(50.083333, 14.466667): ['czech'], // Czech Republic
     Coordinate(55.670094, 12.600247): ['danish'], // Denmark
     Coordinate(52.366667, 4.883333): ['dutch'], // Netherlands
@@ -251,6 +260,32 @@ class _MyHomePageState extends State<MyHomePage> {
     Coordinate(59.933333, 10.683333): ['norwegian'], // Norway
     Coordinate(34.516667, 69.183333): ['pashto'], // Afghanistan
     Coordinate(35.683333, 51.416667): ['persian'], // Iran
+    Coordinate(52.216667, 21.033333): ['polish'], // Poland
+    Coordinate(-8.833333, 13.333333): ['portuguese'], // Angola
+    Coordinate(14.916667, -23.516667): ['portuguese'], // Cape Verde
+    Coordinate(-8.55, 125.56): ['portuguese'], // East Timor
+    Coordinate(12, -15): ['portuguese'], // Guinea-Bissau
+    Coordinate(-25.95, 32.583333): ['portuguese'], // Mozambique
+    Coordinate(38.766667, -9.15): ['portuguese'], // Portugal
+    Coordinate(0.333333, 6.733333): ['portuguese'], // Sao Tome ad Principe
+    Coordinate(-15.783333, -47.866667): ['portuguese_brazil'], // Brazil
+    Coordinate(44.416667, 26.1): ['romanian'], // Romania
+    Coordinate(47, 28.916667): ['romanian'], // Moldova
+    Coordinate(45.254167, 19.8425): [
+      'serbian',
+      'hungarian',
+      'slovak',
+      'romanian',
+      'croatian'
+    ], // Vojvodina
+    Coordinate(55.755833, 37.617222): ['russian'], // Russia
+    Coordinate(53.916667, 27.55): ['russian'], // Belarus
+    Coordinate(42.866667, 74.6): ['russian'], // Kyrgyzstan
+    Coordinate(38.55, 68.8): ['russian'], // Tajikistan
+    Coordinate(48.15, 17.116667): ['slovak'], // Slovakia
+    Coordinate(46.051389, 14.506111): ['slovenian'], // Slovenia
+    Coordinate(44.8, 20.466667): ['serbian'], // Serbia
+    Coordinate(42.666667, 21.166667): ['serbian'], // Kosovo
   };
 
   final player = AudioPlayer();
@@ -266,6 +301,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // When one language audio file completes, play the next (or end)
     player.onPlayerComplete.listen((event) {
+      languageIndex++; // advance to next audio file only when one completes
       _playNextAudio(); // until last audio
     });
   }
@@ -323,6 +359,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // add the distance to each capital and the languages spoken there
     var nearestLanguages = PriorityQueue<DistanceToLanguages>();
+
     coordinateToLanguages.forEach((curCoord, languages) {
       var distance = Geolocator.distanceBetween(location.latitude,
           location.longitude, curCoord.latitude, curCoord.longitude);
@@ -331,7 +368,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     // --- add languages ---
-    // first language is system language
+    // first language is system language when supported
     String languageCode;
     if (localeName == 'pt_BR') {
       // special case for 'portuguese_brazil'
@@ -340,7 +377,7 @@ class _MyHomePageState extends State<MyHomePage> {
       languageCode = localeName.split('_')[0]; // in the form e.g.: 'en_US'
     }
 
-    // unsupported language names ignored and nearest language used first
+    // unsupported language names ignored and nearest language is used first
     var languageName = languageCodeToName[languageCode];
     if (languageName != null) {
       languagesInOrder.add(languageName);
@@ -363,9 +400,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _playNextAudio() async {
+    // play next audio file unless none left to play
     if (languageIndex < languagesInOrder.length) {
-      print(languagesInOrder[languageIndex]); // debug
+      print(languagesInOrder[languageIndex]);
 
+      // Add a delay between audio files
       if (languageIndex > 0) {
         await Future.delayed(const Duration(milliseconds: 500));
       }
@@ -375,10 +414,8 @@ class _MyHomePageState extends State<MyHomePage> {
         await player
             .play(AssetSource('${languagesInOrder[languageIndex]}.mp3'));
 
-        // Handle when the user pressed the button while loading the asset
-        if (isPlaying) {
-          languageIndex++;
-        } else {
+        // Handle when the user pressed the button while the asset was loading
+        if (!isPlaying) {
           player.stop();
         }
       }
@@ -394,7 +431,7 @@ class _MyHomePageState extends State<MyHomePage> {
           child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
-          // Average color of Earth (as seen from satellite)
+          // Average color of Earth (as seen from a satellite)
           // src: https://www.jeffreythompson.org/blog/2014/08/13/average-color-of-the-earth/
           backgroundColor: const Color.fromARGB(255, 23, 57, 61),
           fixedSize: _getButtonSize(),
