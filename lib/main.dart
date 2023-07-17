@@ -89,15 +89,14 @@ class _MyHomePageState extends State<MyHomePage> {
     'ps': 'pashto',
     'fa': 'persian',
     'pl': 'polish',
-    'pt': 'portuguese',
     'pt_BR': 'portuguese_brazil',
+    'pt': 'portuguese',
     'ro': 'romanian',
     'ru': 'russian',
     'sk': 'slovak',
     'sl': 'slovenian',
     'sr': 'serbian',
     'es': 'spanish',
-    'sw': 'swahili',
     'sv': 'swedish',
     'ta': 'tamil',
     'te': 'telugu',
@@ -110,7 +109,6 @@ class _MyHomePageState extends State<MyHomePage> {
     'cy': 'welsh',
   };
 
-  // TODO: populate this while adding matching audio files
   // Stores GPS coordinates of capital of country using the list of official
   // languages (supported languages only)
   // Infomation from Wikipedia.org
@@ -147,8 +145,9 @@ class _MyHomePageState extends State<MyHomePage> {
     Coordinate(39.916667, 116.383333): ['chinese'], // China
     Coordinate(25.066667, 121.516667): ['chinese'], // Taiwan
     Coordinate(1.283333, 103.833333): [
-      'chinese',
       'malay',
+      'chinese',
+      'tamil',
       'english'
     ], // Singapore
     Coordinate(45.8, 16): ['croatian'], // Croatia
@@ -186,7 +185,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Coordinate(6.916667, 158.183333): ['english'], // Micronesia
     Coordinate(-22.566667, 17.083333): ['english'], // Nambia
     Coordinate(9.066667, 7.483333): ['english'], // Nigeria
-    Coordinate(33.691667, 73.05): ['english'], // Pakistan
+    Coordinate(33.691667, 73.05): ['urdu', 'english'], // Pakistan
     Coordinate(-9.478889, 147.149444): ['english'], // Papua New Guinea
     Coordinate(14.582260, 120.974800): ['english'], // Philippines
     Coordinate(-1.943889, 30.059444): ['french', 'english'], // Rwanda
@@ -305,6 +304,16 @@ class _MyHomePageState extends State<MyHomePage> {
     Coordinate(40.433333, -3.7): ['spanish'], // Spain
     Coordinate(-34.883333, -56.166667): ['spanish'], // Uruguay
     Coordinate(10.5, -66.916667): ['spanish'], // Venezuela
+    Coordinate(13.0825, 80.275): ['tamil', 'english'], // Tamil Nadu (India)
+    Coordinate(6.933333, 79.866667): ['tamil'], // Sri Lanka
+    Coordinate(16.51, 80.52): ['telugu', 'urdu'], // Andhra Pradesh (India)
+    Coordinate(17.8244, 79.1879): ['telugu'], // Telangana (India)
+    Coordinate(13.75, 100.483333): ['thai'], // Thailand
+    Coordinate(39.916667, 32.85): ['turkish'], // Turkey
+    Coordinate(49, 32): ['ukrainian'], // Ukraine
+    Coordinate(41.316667, 69.266667): ['uzbek'], // Uzbekistan
+    Coordinate(21.033333, 105.85): ['vietnamese'], // Vietnam
+    Coordinate(51.483333, -3.183333): ['english', 'welsh'], // Wales
   };
 
   final player = AudioPlayer();
@@ -312,6 +321,7 @@ class _MyHomePageState extends State<MyHomePage> {
   var languagesInOrder = [];
   var languageIndex = 0;
   var isPlaying = false; // doesn't start 'til pressed
+  var subtitles = ''; // no subtitles until started
 
   _MyHomePageState() {
     // Use actual (when allowed) or random location to populate the list
@@ -320,6 +330,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // When one language audio file completes, play the next (or end)
     player.onPlayerComplete.listen((event) {
+      setState(() {
+        subtitles = '';
+      });
       languageIndex++; // advance to next audio file only when one completes
       _playNextAudio(); // until last audio
     });
@@ -434,7 +447,11 @@ class _MyHomePageState extends State<MyHomePage> {
             .play(AssetSource('${languagesInOrder[languageIndex]}.mp3'));
 
         // Handle when the user pressed the button while the asset was loading
-        if (!isPlaying) {
+        if (isPlaying) {
+          setState(() {
+            subtitles = 'I hope you have a good day';
+          });
+        } else {
           player.stop();
         }
       }
@@ -473,7 +490,7 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Padding(
               padding: EdgeInsets.all(_calcSubtitlePadding()),
               child: Text(
-                'I hope you have a good day',
+                subtitles,
                 style: TextStyle(
                   color: Colors.white,
                   backgroundColor: const Color.fromARGB(255, 32, 32, 32),

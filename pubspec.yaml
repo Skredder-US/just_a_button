@@ -140,8 +140,8 @@ flutter:
     - assets/pashto.mp3
     - assets/persian.mp3
     - assets/polish.mp3
-    - assets/portuguese.mp3
     - assets/portuguese_brazil.mp3
+    - assets/portuguese.mp3
     - assets/romanian.mp3
     - assets/russian.mp3
     - assets/serbian.mp3
@@ -149,4 +149,12 @@ flutter:
     - assets/slovenian.mp3
     - assets/spanish.mp3
     - assets/swedish.mp3
+    - assets/tamil.mp3
+    - assets/telugu.mp3
+    - assets/thai.mp3
     - assets/turkish.mp3
+    - assets/ukrainian.mp3
+    - assets/urdu.mp3
+    - assets/uzbek.mp3
+    - assets/vietnamese.mp3
+    - assets/welsh.mp3
